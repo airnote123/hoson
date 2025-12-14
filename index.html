@@ -2,10 +2,11 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Supabase Test</title>
+  <title>Supabase 連動</title>
 </head>
 <body>
   <h1>Supabase 連動テスト</h1>
+
   <input id="msg" placeholder="メッセージ" />
   <button onclick="send()">送信</button>
 
@@ -13,17 +14,16 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const supabaseUrl = "https://xxxxx.supabase.co";
-    const supabaseKey = "sb_publishable_xxxxx";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = "https://speopkpxkpmspuxjgyde.supabase.co";
+    const supabaseKey = "sb_publishable_ywXntr_4W851vxWRjZ3dPA_uCvLurUu";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function send() {
       const text = document.getElementById("msg").value;
+      if (!text) return;
 
-      await supabase
-        .from("messages")
-        .insert([{ text }]);
-
+      await supabase.from("messages").insert([{ text }]);
+      document.getElementById("msg").value = "";
       load();
     }
 
@@ -31,11 +31,11 @@
       const { data } = await supabase
         .from("messages")
         .select("*")
-        .order("id");
+        .order("id", { ascending: true });
 
       const ul = document.getElementById("list");
       ul.innerHTML = "";
-      data.forEach(r => {
+      (data || []).forEach(r => {
         const li = document.createElement("li");
         li.textContent = r.text;
         ul.appendChild(li);
