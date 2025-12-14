@@ -1,23 +1,110 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>Button Test</title>
+<meta charset="UTF-8">
+<title>Login App</title>
 </head>
 <body>
-  <h1>ボタン動作テスト</h1>
 
-  <input id="msg" placeholder="文字を入れてね" />
+<h2 id="title">ログイン</h2>
+
+<div id="login">
+  <input id="username" placeholder="ID"><br>
+  <input id="password" type="password" placeholder="パスワード"><br><br>
+  <button onclick="login()">ログイン</button>
+</div>
+
+<div id="app" style="display:none;">
+  <p id="userInfo"></p>
+
+  <input id="msg" placeholder="メッセージ">
   <button onclick="send()">送信</button>
+  <button onclick="logout()">ログアウト</button>
 
-  <p id="status"></p>
+  <ul id="list"></ul>
 
-  <script>
-    function send() {
-      const text = document.getElementById("msg").value;
-      document.getElementById("status").textContent =
-        "送りました！ 内容: " + text;
-    }
-  </script>
+  <h3 id="adminTitle" style="display:none;">管理者画面</h3>
+  <button id="adminBtn" style="display:none;" onclick="adminAction()">管理者操作</button>
+</div>
+
+<p id="status"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabase = supabase.createClient(
+  "https://speopkpxkpmspuxjgyde.supabase.co",
+  "sb_publishable_ywXntr_4W851vxWRjZ3dPA_uCvLurUu"
+);
+
+let currentUser = null;
+
+async function login() {
+  const u = username.value;
+  const p = password.value;
+
+  const { data } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", u)
+    .eq("password", p)
+    .single();
+
+  if (!data) {
+    status.textContent = "ログイン失敗";
+    return;
+  }
+
+  currentUser = data;
+  login.style.display = "none";
+  app.style.display = "block";
+  userInfo.textContent = "ログイン中：" + data.username;
+
+  if (data.is_admin) {
+    adminTitle.style.display = "block";
+    adminBtn.style.display = "inline";
+  }
+
+  load();
+}
+
+async function send() {
+  const text = msg.value;
+  if (!text) return;
+
+  await supabase.from("messages").insert([{
+    text,
+    user_id: currentUser.id
+  }]);
+
+  msg.value = "";
+  load();
+}
+
+async function load() {
+  const { data } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("user_id", currentUser.id);
+
+  list.innerHTML = "";
+  data.forEach(r => {
+    const li = document.createElement("li");
+    li.textContent = r.text;
+    list.appendChild(li);
+  });
+}
+
+function logout() {
+  currentUser = null;
+  app.style.display = "none";
+  login.style.display = "block";
+  status.textContent = "ログアウトしました";
+}
+
+function adminAction() {
+  alert("管理者だけが見られる操作");
+}
+</script>
+
 </body>
 </html>
