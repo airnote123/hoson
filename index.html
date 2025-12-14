@@ -2,32 +2,58 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Login App</title>
+<title>Login System</title>
+<style>
+body {
+  font-family: sans-serif;
+  background:#f2f2f2;
+}
+.box {
+  background:white;
+  padding:20px;
+  margin:40px auto;
+  width:320px;
+  border-radius:8px;
+}
+input, button {
+  width:100%;
+  padding:8px;
+  margin-top:6px;
+}
+button {
+  cursor:pointer;
+}
+.admin {
+  background:#ffeeba;
+  padding:10px;
+  margin-top:20px;
+}
+</style>
 </head>
 <body>
 
-<h2 id="title">ログイン</h2>
-
-<div id="login">
-  <input id="username" placeholder="ID"><br>
-  <input id="password" type="password" placeholder="パスワード"><br><br>
+<div class="box" id="loginBox">
+  <h2>ログイン</h2>
+  <input id="loginUser" placeholder="ID">
+  <input id="loginPass" type="password" placeholder="パスワード">
   <button onclick="login()">ログイン</button>
+  <p id="status"></p>
 </div>
 
-<div id="app" style="display:none;">
-  <p id="userInfo"></p>
-
-  <input id="msg" placeholder="メッセージ">
-  <button onclick="send()">送信</button>
+<div class="box" id="appBox" style="display:none;">
+  <p id="info"></p>
   <button onclick="logout()">ログアウト</button>
 
-  <ul id="list"></ul>
+  <div class="admin" id="adminBox" style="display:none;">
+    <h3>管理者画面</h3>
 
-  <h3 id="adminTitle" style="display:none;">管理者画面</h3>
-  <button id="adminBtn" style="display:none;" onclick="adminAction()">管理者操作</button>
+    <input id="newUser" placeholder="新ID">
+    <input id="newPass" placeholder="新パスワード">
+    <button onclick="addUser()">追加</button>
+
+    <ul id="userList"></ul>
+  </div>
 </div>
-
-<p id="status"></p>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -39,8 +65,8 @@ const supabase = supabase.createClient(
 let currentUser = null;
 
 async function login() {
-  const u = username.value;
-  const p = password.value;
+  const u = document.getElementById("loginUser").value;
+  const p = document.getElementById("loginPass").value;
 
   const { data } = await supabase
     .from("users")
@@ -55,56 +81,49 @@ async function login() {
   }
 
   currentUser = data;
-  login.style.display = "none";
-  app.style.display = "block";
-  userInfo.textContent = "ログイン中：" + data.username;
+  loginBox.style.display = "none";
+  appBox.style.display = "block";
+  info.textContent = "ログイン中：" + data.username;
 
   if (data.is_admin) {
-    adminTitle.style.display = "block";
-    adminBtn.style.display = "inline";
+    adminBox.style.display = "block";
+    loadUsers();
   }
-
-  load();
-}
-
-async function send() {
-  const text = msg.value;
-  if (!text) return;
-
-  await supabase.from("messages").insert([{
-    text,
-    user_id: currentUser.id
-  }]);
-
-  msg.value = "";
-  load();
-}
-
-async function load() {
-  const { data } = await supabase
-    .from("messages")
-    .select("*")
-    .eq("user_id", currentUser.id);
-
-  list.innerHTML = "";
-  data.forEach(r => {
-    const li = document.createElement("li");
-    li.textContent = r.text;
-    list.appendChild(li);
-  });
 }
 
 function logout() {
   currentUser = null;
-  app.style.display = "none";
-  login.style.display = "block";
-  status.textContent = "ログアウトしました";
+  appBox.style.display = "none";
+  loginBox.style.display = "block";
 }
 
-function adminAction() {
-  alert("管理者だけが見られる操作");
+async function loadUsers() {
+  const { data } = await supabase.from("users").select("*");
+  userList.innerHTML = "";
+  data.forEach(u => {
+    const li = document.createElement("li");
+    li.textContent = `${u.username} / ${u.password}`;
+    const del = document.createElement("button");
+    del.textContent = "削除";
+    del.onclick = () => deleteUser(u.id);
+    li.appendChild(del);
+    userList.appendChild(li);
+  });
+}
+
+async function addUser() {
+  const u = newUser.value;
+  const p = newPass.value;
+  await supabase.from("users").insert([{ username:u, password:p, is_admin:false }]);
+  newUser.value = "";
+  newPass.value = "";
+  loadUsers();
+}
+
+async function deleteUser(id) {
+  await supabase.from("users").delete().eq("id", id);
+  loadUsers();
 }
 </script>
-
 </body>
 </html>
