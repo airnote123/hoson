@@ -1,17 +1,48 @@
-<input id="msg" placeholder="文字を入力">
-<button onclick="save()">保存</button>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Supabase Test</title>
+</head>
+<body>
+  <h1>Supabase 連動テスト</h1>
+  <input id="msg" placeholder="メッセージ" />
+  <button onclick="send()">送信</button>
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <ul id="list"></ul>
 
-const supabase = createClient(
-  "Project URL をここ",
-  "Publishable key をここ"
-);
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = "https://xxxxx.supabase.co";
+    const supabaseKey = "sb_publishable_xxxxx";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-window.save = async () => {
-  const text = document.getElementById("msg").value;
-  const { error } = await supabase.from("messages").insert({ text });
-  alert(error ? "失敗" : "サーバ保存成功");
-};
-</script>
+    async function send() {
+      const text = document.getElementById("msg").value;
+
+      await supabase
+        .from("messages")
+        .insert([{ text }]);
+
+      load();
+    }
+
+    async function load() {
+      const { data } = await supabase
+        .from("messages")
+        .select("*")
+        .order("id");
+
+      const ul = document.getElementById("list");
+      ul.innerHTML = "";
+      data.forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = r.text;
+        ul.appendChild(li);
+      });
+    }
+
+    load();
+  </script>
+</body>
+</html>
