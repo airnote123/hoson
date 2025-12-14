@@ -1,0 +1,17 @@
+<input id="msg" placeholder="文字を入力">
+<button onclick="save()">保存</button>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "Project URL をここ",
+  "Publishable key をここ"
+);
+
+window.save = async () => {
+  const text = document.getElementById("msg").value;
+  const { error } = await supabase.from("messages").insert({ text });
+  alert(error ? "失敗" : "サーバ保存成功");
+};
+</script>
